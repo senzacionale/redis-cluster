@@ -1,0 +1,47 @@
+version: '3'
+
+services:
+  redis-master:
+    image: 'bitnami/redis:latest'
+    ports:
+      - '6379:6379'
+    environment:
+      - REDIS_REPLICATION_MODE=master
+      - ALLOW_EMPTY_PASSWORD=yes
+    volumes:
+      - redis_master:/bitnami
+    networks:
+      - app-tier
+      
+  redis-replica:
+    image: 'bitnami/redis:latest'
+    ports:
+      - '6380:6379'
+    depends_on:
+      - redis-master
+    environment:
+      - REDIS_REPLICATION_MODE=slave
+      - REDIS_MASTER_HOST=redis-master
+      - REDIS_MASTER_PORT_NUMBER=6379
+      - ALLOW_EMPTY_PASSWORD=yes
+    volumes:
+      - redis_slave:/bitnami
+    networks:
+      - app-tier
+      
+  redis-sentinel:
+    image: bitnami/redis-sentinel:latest
+    environment:
+      - REDIS_MASTER_HOST=redis-master
+    ports:
+      - '26379:26379'
+    networks:
+      - app-tier
+      
+volumes:
+  redis_master:
+  redis_slave:
+  
+networks:
+  app-tier:
+    driver: bridge
